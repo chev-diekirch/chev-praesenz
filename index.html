@@ -20,5 +20,32 @@
   <!-- Hier wird die App aus Google Apps Script angezeigt -->
   <iframe src="https://script.google.com/macros/s/AKfycbxQl4XM8Qbeo_zzB3xYETs-0Jf-WFLVq2k0osQ_LP98PnxHzhaauW7Ej7P79ibXSLYu/exec"
           title="CHEV Anwesenheit" allow="clipboard-write"></iframe>
+
+  <script>
+    // Die App (bei Google) darf ihre Anmeldung hier aufbewahren lassen,
+    // weil der Browser den Speicher der eingebetteten App oft löscht.
+    const ERLAUBTE_NAMEN = ['chevToken', 'chevLoginEmail'];
+
+    window.addEventListener('message', function (ereignis) {
+      // Nur Nachrichten von der Google-Apps-Script-App annehmen
+      if (!/^https:\/\/[a-z0-9-]+\.googleusercontent\.com$/.test(ereignis.origin)) {
+        return;
+      }
+      const d = ereignis.data;
+      if (!d || typeof d !== 'object' || !ERLAUBTE_NAMEN.includes(d.name)) {
+        return;
+      }
+      try {
+        if (d.chev === 'merke') {
+          localStorage.setItem(d.name, String(d.wert));
+        } else if (d.chev === 'vergiss') {
+          localStorage.removeItem(d.name);
+        } else if (d.chev === 'frage') {
+          const wert = localStorage.getItem(d.name) || '';
+          ereignis.source.postMessage({ chev: 'antwort', name: d.name, wert: wert }, ereignis.origin);
+        }
+      } catch (e) {}
+    });
+  </script>
 </body>
 </html>
